@@ -1,0 +1,19 @@
+# Auth Service - Django REST + JWT + Docker
+
+Microservicio de autenticación con Django REST Framework, JWT, PostgreSQL y Docker.
+
+---
+
+## Requisitos
+
+- Docker
+- Docker Compose
+
+---
+
+## Ejecutar el proyecto
+
+### 1. Levantar contenedores
+
+```bash
+docker compose up --build

@@ -1,0 +1,5 @@
+superusuario
+
+password: oso12345
+usuario: Oso 
+Email:dieguitovicente23@gmail.com
