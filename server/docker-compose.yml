@@ -20,6 +20,25 @@ services:
     volumes:
       - auth_postgres_data:/var/lib/postgresql/data
 
+
+  inventory_db:
+    image: postgres:16
+    container_name: inventory_db
+    
+    restart: always
+
+    environment:
+      POSTGRES_DB: inventory_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    ports: 
+        - "5433:5432"
+
+    volumes:
+       - inventory_postgres_data:/var/lib/postgresql/data
+
+
   auth_service:
     build:
       context: ./services/auth_service
@@ -37,5 +56,24 @@ services:
     depends_on:
       - auth_db
 
+
+  inventory_service:
+    build:
+      context: ./services/inventory_service
+
+    container_name: inventory_service
+
+    command: python manage.py runserver 0.0.0.0:8002
+
+    volumes:
+      - ./services/inventory_service:/app
+
+    ports:
+      - "8002:8002"
+
+    depends_on:
+      - inventory_db
+
 volumes:
   auth_postgres_data:
+  inventory_postgres_data:
