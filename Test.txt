@@ -1,0 +1,14 @@
+#Body para registro de usuario
+
+{
+    "username": "diego_vicente123",
+    "email":"diego@gmail.com",
+    "password": "Password123",
+    "role": "admin"
+}
+
+#Body para inicio de sesión
+{
+    "username": "diego_vicente123",
+    "password": "Password123"
+}

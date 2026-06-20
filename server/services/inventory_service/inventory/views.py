@@ -8,11 +8,18 @@ from .serializers import(
     CategorySerializer,
     ProductSerializer
 )
+
+from .authentication import JWTServiceAuthentication
+from .permissions import IsAuthenticatedService
+
 # Create your views here.
 class CategoryView(APIView):
-   
+
+    authentication_classes = [JWTServiceAuthentication]
+    permission_classes = [IsAuthenticatedService]
 
     def get(self, request):
+
         categories = Category.objects.all()
 
         serializer = CategorySerializer(
@@ -22,6 +29,7 @@ class CategoryView(APIView):
 
         return Response(serializer.data)
     
+
     def post(self, request):
 
         serializer = CategorySerializer(
@@ -37,7 +45,8 @@ class CategoryView(APIView):
     
 class ProductView(APIView):
 
-
+    authentication_classes = [JWTServiceAuthentication]
+    permission_classes = [IsAuthenticatedService]
 
     def get(self, request):
 
@@ -64,6 +73,8 @@ class ProductView(APIView):
 
 class ProductDetailView(APIView):
 
+    authentication_classes = [JWTServiceAuthentication]
+    permission_classes = [IsAuthenticatedService]
 
     def get(self, request, pk):
         product = Product.objects.get(pk=pk)
@@ -73,6 +84,9 @@ class ProductDetailView(APIView):
         return Response(serializer.data)
 
 class ProductUpdateView(APIView):
+
+    authentication_classes = [JWTServiceAuthentication]
+    permission_classes = [IsAuthenticatedService]
 
     def put(self, request, pk):
         product = Product.objects.get(pk=pk)
@@ -91,6 +105,8 @@ class ProductUpdateView(APIView):
     
 class ProductDeleteView(APIView):
 
+    authentication_classes = [JWTServiceAuthentication]
+    permission_classes = [IsAuthenticatedService]
 
     def delete(self, request, pk):
         product = Product.objects.get(pk=pk)
@@ -98,3 +114,52 @@ class ProductDeleteView(APIView):
 
         Response({"message":"Producto eliminado"})
 
+
+class UpdateStockView(APIView):
+    authentication_classes = [JWTServiceAuthentication]
+    permission_classes = [IsAuthenticatedService]
+
+    def put(self, request, pk):
+        try:
+            product = Product.objects.get(pk=pk)
+
+            quantity = int (request.data.get("stock", 0))
+
+            quantity = int(
+                request.data("quantity")
+            )
+
+            if quantity <=0:
+                return Response(
+                    {
+                        "error":
+                        "Cantidad inválida"
+                    },
+                    status = 400
+                )
+            
+            if product.stock < quantity:
+                return Response(
+                    {
+                        "error: "
+                        "Stock insuficiente"
+                    },
+                    status = 400
+                )
+            product.stock -=quantity
+            product.save()
+
+            serializer = ProductSerializer(
+                product
+            )
+
+            return Response(serializer.data)
+        
+        except Product.DoesNotExist:
+            return Response(
+                {
+                    "error":
+                    "Producto no encontrado"
+                },
+                status=404
+            )
