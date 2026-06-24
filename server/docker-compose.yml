@@ -54,7 +54,7 @@ services:
       - "5434:5432"
 
     volumes:
-      - sales_postgres_data: /var/lib/postgresql/data
+      - sales_postgres_data:/var/lib/postgresql/data
     
   auth_service:
     build:
@@ -91,21 +91,28 @@ services:
     depends_on:
       - inventory_db
 
+    networks:
+      default:
+        aliases:
+          - inventory-service
+
   sales_service:
-  build:
-    context: ./services/sales_service
-  
-  container_name: sales_service
-  command: python manage.py runserver 0.0.0.0:8003
+    build:
+      context: ./services/sales_service
+    
+    container_name: sales_service
+    command: python manage.py runserver 0.0.0.0:8003
 
-  volumes:
-    - ./services/sales_service:/app
+    volumes:
+      - ./services/sales_service:/app
 
-  ports:
-    - "8003:8003"
+    ports:
+      - "8003:8003"
 
-  depends_on:
-    - sales_db
+    depends_on:
+      - sales_db
+      - inventory_service
+
 volumes:
   auth_postgres_data:
   inventory_postgres_data:

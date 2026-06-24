@@ -25,7 +25,7 @@ SECRET_KEY = 'django-microservice-system'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*", "inventory-service"]
 
 
 # Application definition
@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'inventory',
+    'raw_materials',
     'drf_spectacular',
 ]
 

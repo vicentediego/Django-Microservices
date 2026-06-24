@@ -123,30 +123,46 @@ class UpdateStockView(APIView):
         try:
             product = Product.objects.get(pk=pk)
 
-            quantity = int (request.data.get("stock", 0))
-
             quantity = int(
-                request.data("quantity")
+                request.data.get("quantity", 0)
             )
 
-            if quantity <=0:
+            action = request.data.get(
+                "action", "discount"
+            )
+
+            if quantity <= 0:
                 return Response(
                     {
                         "error":
                         "Cantidad inválida"
                     },
-                    status = 400
+                    status=400
                 )
-            
-            if product.stock < quantity:
+
+            if action == "discount":
+                if product.stock < quantity:
+                    return Response(
+                        {
+                            "error":
+                            "Stock insuficiente"
+                        },
+                        status=400
+                    )
+                product.stock -= quantity
+
+            elif action == "restock":
+                product.stock += quantity
+
+            else:
                 return Response(
                     {
-                        "error: "
-                        "Stock insuficiente"
+                        "error":
+                        "Acción inválida"
                     },
-                    status = 400
+                    status=400
                 )
-            product.stock -=quantity
+
             product.save()
 
             serializer = ProductSerializer(
@@ -154,7 +170,7 @@ class UpdateStockView(APIView):
             )
 
             return Response(serializer.data)
-        
+
         except Product.DoesNotExist:
             return Response(
                 {

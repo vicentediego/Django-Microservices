@@ -27,9 +27,6 @@ class SaleView(APIView):
         return Response(serializer.data)
     
     def post(self, request):
-        authentication_classes = [JWTServiceAuthentication]
-
-        permission_classes = [isAuthenticatedService]
 
         product_id = request.data.get(
             "product_id"
@@ -39,10 +36,13 @@ class SaleView(APIView):
             request.data.get("quantity")
         )
 
+        description = request.data.get(
+            "description"
+        )
         #Consultar Inventory
 
         inventory_response = requests.get(
-            f"http://inventory_service:8002/api/products/{product_id}/",
+            f"http://inventory-service:8002/api/products/{product_id}/",
             headers={
                 "Authorization":
                 request.headers.get(
@@ -76,7 +76,7 @@ class SaleView(APIView):
         #Descontar stock
 
         discount_response=requests.put(
-            f"https://inventory_service:8002:/api/products/{product_id}/stock/",
+            f"http://inventory-service:8002/api/products/{product_id}/stock/",
             json={
                 "quantity": quantity
             },
@@ -105,6 +105,7 @@ class SaleView(APIView):
             user_id=request.user["user_id"],
             product_id=product_id,
             quantity=quantity,
+            description = description,
             total = total
         )
 
@@ -115,4 +116,140 @@ class SaleView(APIView):
         return Response(
             serializer.data,
             status=201
+        )
+
+class SaleDetailView(APIView):
+    authentication_classes = [JWTServiceAuthentication]
+    permission_classes = [isAuthenticatedService]
+
+    def get(self, request, pk):
+        try:
+            sale = Sale.objects.get(pk=pk)
+        except Sale.DoesNotExist:
+            return Response(
+                {"error": "Venta no encontrada"},
+                status=404
+            )
+
+        serializer = SaleSerializer(sale)
+        return Response(serializer.data)
+
+class SaleUpdateView(APIView):
+    authentication_classes = [JWTServiceAuthentication]
+    permission_classes = [isAuthenticatedService]
+
+    def put(self, request, pk):
+        try:
+            sale = Sale.objects.get(pk=pk)
+        except Sale.DoesNotExist:
+            return Response(
+                {"error": "Venta no encontrada"},
+                status=404
+            )
+
+        new_quantity = int(
+            request.data.get("quantity", sale.quantity)
+        )
+
+        diff = new_quantity - sale.quantity
+
+        if diff != 0:
+            if diff > 0:
+                action = "discount"
+            else:
+                action = "restock"
+
+            stock_response = requests.put(
+                f"http://inventory-service:8002/api/products/{sale.product_id}/stock/",
+                json={
+                    "quantity": abs(diff),
+                    "action": action
+                },
+                headers={
+                    "Authorization":
+                    request.headers.get(
+                        "Authorization"
+                    )
+                }
+            )
+
+            if stock_response.status_code != 200:
+                return Response(
+                    {
+                        "error":
+                        "No se pudo actualizar stock"
+                    },
+                    status=400
+                )
+
+        inventory_response = requests.get(
+            f"http://inventory-service:8002/api/products/{sale.product_id}/",
+            headers={
+                "Authorization":
+                request.headers.get(
+                    "Authorization"
+                )
+            }
+        )
+
+        if inventory_response.status_code != 200:
+            return Response(
+                {"error": "Producto no encontrado"},
+                status=404
+            )
+
+        product = inventory_response.json()
+
+        sale.quantity = new_quantity
+        sale.description = request.data.get(
+            "description", sale.description
+        )
+        sale.total = (
+            float(product["price"]) * new_quantity
+        )
+        sale.save()
+
+        serializer = SaleSerializer(sale)
+        return Response(serializer.data)
+
+class SaleDeleteView(APIView):
+    authentication_classes = [JWTServiceAuthentication]
+    permission_classes = [isAuthenticatedService]
+
+    def delete(self, request, pk):
+        try:
+            sale = Sale.objects.get(pk=pk)
+        except Sale.DoesNotExist:
+            return Response(
+                {"error": "Venta no encontrada"},
+                status=404
+            )
+
+        stock_response = requests.put(
+            f"http://inventory-service:8002/api/products/{sale.product_id}/stock/",
+            json={
+                "quantity": sale.quantity,
+                "action": "restock"
+            },
+            headers={
+                "Authorization":
+                request.headers.get(
+                    "Authorization"
+                )
+            }
+        )
+
+        if stock_response.status_code != 200:
+            return Response(
+                {
+                    "error":
+                    "No se pudo devolver stock"
+                },
+                status=400
+            )
+
+        sale.delete()
+        return Response(
+            {"message": "Venta eliminada"},
+            status=200
         )
