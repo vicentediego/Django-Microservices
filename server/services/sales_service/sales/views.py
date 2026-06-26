@@ -3,7 +3,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-# Create your views here
 import requests
 from .models import Sale
 from .serializers import SaleSerializer
@@ -11,9 +10,28 @@ from .serializers import SaleSerializer
 from .authentication import (JWTServiceAuthentication)
 from .permissions import (isAuthenticatedService)
 
+INVENTORY_URL = "http://inventory-service:8002/api"
+
+def get_auth_header(request):
+    return {
+        "Authorization":
+        request.headers.get("Authorization")
+    }
+
+def create_product_movement(request, product_id, quantity, type_of, description):
+    return requests.post(
+        f"{INVENTORY_URL}/products/movements/",
+        json={
+            "product": product_id,
+            "quantity": quantity,
+            "type_of": type_of,
+            "description": description
+        },
+        headers=get_auth_header(request)
+    )
+
 class SaleView(APIView):
     authentication_classes = [JWTServiceAuthentication]
-
     permission_classes = [isAuthenticatedService]
 
     def get(self, request):
@@ -25,7 +43,7 @@ class SaleView(APIView):
         )
 
         return Response(serializer.data)
-    
+
     def post(self, request):
 
         product_id = request.data.get(
@@ -37,29 +55,23 @@ class SaleView(APIView):
         )
 
         description = request.data.get(
-            "description"
+            "description", "venta"
         )
-        #Consultar Inventory
 
         inventory_response = requests.get(
-            f"http://inventory-service:8002/api/products/{product_id}/",
-            headers={
-                "Authorization":
-                request.headers.get(
-                    "Authorization"
-                )
-            }
+            f"{INVENTORY_URL}/products/{product_id}/",
+            headers=get_auth_header(request)
         )
 
-        if inventory_response.status_code !=200:
+        if inventory_response.status_code != 200:
             return Response(
                 {
                     "error":
                     "Producto no encontrado"
                 },
-                status = 404
+                status=404
             )
-        
+
         product = inventory_response.json()
 
         current_stock = product["stock"]
@@ -70,33 +82,23 @@ class SaleView(APIView):
                     "error":
                     "Stock insuficiente"
                 },
-                status = 400
+                status=400
             )
-        
-        #Descontar stock
 
-        discount_response=requests.put(
-            f"http://inventory-service:8002/api/products/{product_id}/stock/",
-            json={
-                "quantity": quantity
-            },
-            headers={
-                "Authorization":
-                request.headers.get(
-                    "Authorization"
-                )
-            }
+        movement_response = create_product_movement(
+            request, product_id, quantity,
+            "stock_out", "venta"
         )
 
-        if discount_response.status_code != 200:
+        if movement_response.status_code != 201:
             return Response(
                 {
                     "error":
-                    "No se pudo descontar stock"
+                    "No se pudo registrar el movimiento"
                 },
-                status = 400
+                status=400
             )
-        
+
         total = (
             float(product["price"]) * quantity
         )
@@ -105,13 +107,11 @@ class SaleView(APIView):
             user_id=request.user["user_id"],
             product_id=product_id,
             quantity=quantity,
-            description = description,
-            total = total
+            description=description,
+            total=total
         )
 
-        serializer = SaleSerializer(
-            sale
-        )
+        serializer = SaleSerializer(sale)
 
         return Response(
             serializer.data,
@@ -155,25 +155,16 @@ class SaleUpdateView(APIView):
 
         if diff != 0:
             if diff > 0:
-                action = "discount"
+                type_of = "stock_out"
             else:
-                action = "restock"
+                type_of = "stock_in"
 
-            stock_response = requests.put(
-                f"http://inventory-service:8002/api/products/{sale.product_id}/stock/",
-                json={
-                    "quantity": abs(diff),
-                    "action": action
-                },
-                headers={
-                    "Authorization":
-                    request.headers.get(
-                        "Authorization"
-                    )
-                }
+            movement_response = create_product_movement(
+                request, sale.product_id, abs(diff),
+                type_of, "ajuste venta"
             )
 
-            if stock_response.status_code != 200:
+            if movement_response.status_code != 201:
                 return Response(
                     {
                         "error":
@@ -183,13 +174,8 @@ class SaleUpdateView(APIView):
                 )
 
         inventory_response = requests.get(
-            f"http://inventory-service:8002/api/products/{sale.product_id}/",
-            headers={
-                "Authorization":
-                request.headers.get(
-                    "Authorization"
-                )
-            }
+            f"{INVENTORY_URL}/products/{sale.product_id}/",
+            headers=get_auth_header(request)
         )
 
         if inventory_response.status_code != 200:
@@ -225,21 +211,12 @@ class SaleDeleteView(APIView):
                 status=404
             )
 
-        stock_response = requests.put(
-            f"http://inventory-service:8002/api/products/{sale.product_id}/stock/",
-            json={
-                "quantity": sale.quantity,
-                "action": "restock"
-            },
-            headers={
-                "Authorization":
-                request.headers.get(
-                    "Authorization"
-                )
-            }
+        movement_response = create_product_movement(
+            request, sale.product_id, sale.quantity,
+            "stock_in", "cancelacion venta"
         )
 
-        if stock_response.status_code != 200:
+        if movement_response.status_code != 201:
             return Response(
                 {
                     "error":

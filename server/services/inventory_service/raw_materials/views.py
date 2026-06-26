@@ -1,7 +1,9 @@
 from django.shortcuts import render
+from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
 
 from .models import Category, Raw_material, Raw_material_movement
 
@@ -152,31 +154,78 @@ class RawMaterialMovementView(APIView):
             data=request.data
         )
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        
-        return Response(serializer.errors)
-    
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        movement = serializer.save()
+        raw_material = movement.raw_material
+
+        with transaction.atomic():
+            if movement.type_of == Raw_material_movement.Status.STOCK_IN:
+                raw_material.quantity += movement.quantity
+            else:
+                if raw_material.quantity < movement.quantity:
+                    movement.delete()
+                    return Response(
+                        {"error": f"Stock insuficiente. Stock actual: {raw_material.quantity}"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                raw_material.quantity -= movement.quantity
+
+            raw_material.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     def put(self, request, pk):
-        raw_material_movement = Raw_material_movement.objects.get(pk=pk)
+        movement = Raw_material_movement.objects.get(pk=pk)
+        raw_material = movement.raw_material
+
+        old_type = movement.type_of
+        old_quantity = movement.quantity
 
         serializer = RawMaterialMovementSerializer(
-            raw_material_movement,
-            data = request.data
+            movement,
+            data=request.data
         )
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        
-        return Response(serializer.errors)
-    
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            if old_type == Raw_material_movement.Status.STOCK_IN:
+                raw_material.quantity -= old_quantity
+            else:
+                raw_material.quantity += old_quantity
+
+            updated_movement = serializer.save()
+
+            if updated_movement.type_of == Raw_material_movement.Status.STOCK_IN:
+                raw_material.quantity += updated_movement.quantity
+            else:
+                if raw_material.quantity < updated_movement.quantity:
+                    raise ValueError("Stock insuficiente")
+                raw_material.quantity -= updated_movement.quantity
+
+            raw_material.save()
+
+        return Response(serializer.data)
+
     def delete(self, request, pk):
-        raw_material_movement = Raw_material_movement.objects.get(pk=pk)
+        movement = Raw_material_movement.objects.get(pk=pk)
+        raw_material = movement.raw_material
 
-        raw_material_movement.delete()
+        with transaction.atomic():
+            if movement.type_of == Raw_material_movement.Status.STOCK_IN:
+                if raw_material.quantity < movement.quantity:
+                    return Response(
+                        {"error": f"No se puede eliminar. El stock quedaría negativo."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                raw_material.quantity -= movement.quantity
+            else:
+                raw_material.quantity += movement.quantity
 
-        return Response(
-            {"message":"Movimiento de inventario de insumos eliminado" }
-        )
+            raw_material.save()
+            movement.delete()
+
+        return Response({"message": "Movimiento eliminado correctamente"})

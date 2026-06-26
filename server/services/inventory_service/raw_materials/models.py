@@ -40,6 +40,8 @@ class Raw_material_movement(models.Model):
         related_name='movements'
     )
 
+    quantity = models.PositiveIntegerField()
+
     description = models.CharField(max_length=50)
 
     time = models.TimeField(auto_now_add=True)

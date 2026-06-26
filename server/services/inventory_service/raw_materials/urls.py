@@ -15,4 +15,6 @@ urlpatterns = [
     path('raw-materials/<int:pk>/', RawMaterialDetailView.as_view()),
     path('raw-materials/<int:pk>/update/', RawMaterialUpdateView.as_view()),
     path('raw-materials/<int:pk>/delete/', RawMaterialDeleteView.as_view()),
+    path('raw-materials/movements/', RawMaterialMovementView.as_view()),
+    path('raw-materials/movements/<int:pk>/', RawMaterialMovementView.as_view()),
 ]
