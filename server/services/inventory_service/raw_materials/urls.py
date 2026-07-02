@@ -10,7 +10,8 @@ from .views import(
 )
 
 urlpatterns = [
-    path('categories/', CategoryView.as_view()),
+    path('raw-materials/categories/', CategoryView.as_view()),
+    path('raw-materials/categories/<int:pk>/', CategoryView.as_view()),
     path('raw-materials/', RawMaterialView.as_view()),
     path('raw-materials/<int:pk>/', RawMaterialDetailView.as_view()),
     path('raw-materials/<int:pk>/update/', RawMaterialUpdateView.as_view()),

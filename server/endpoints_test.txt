@@ -1,0 +1,289 @@
+================================================
+  ENDPOINTS - MICROSERVICIOS
+  Base URL: http://localhost
+================================================
+
+
+▸ AUTH SERVICE
+================================================
+
+POST /api/auth/register/
+{
+    "username": "testuser",
+    "email": "test@test.com",
+    "password": "testpass123",
+    "role": "employee"
+}
+
+POST /api/auth/login/
+{
+    "username": "testuser",
+    "password": "testpass123"
+}
+
+POST /api/auth/token/refresh/
+{
+    "refresh": "<refresh_token>"
+}
+
+GET /api/auth/users/
+
+GET /api/auth/users/1/
+
+PUT /api/auth/users/1/update/
+{
+    "username": "testuser",
+    "email": "updated@test.com",
+    "role": "admin"
+}
+
+DELETE /api/auth/users/1/delete/
+
+
+▸ INVENTORY SERVICE - Categorías de Productos
+================================================
+
+POST /api/inventory/categories/
+{
+    "name": "Electrónica",
+    "description": "Productos electrónicos"
+}
+
+GET /api/inventory/categories/
+
+PUT /api/inventory/categories/1/
+{
+    "name": "Electrónica Actualizada",
+    "description": "Descripción actualizada"
+}
+
+DELETE /api/inventory/categories/1/
+
+
+▸ INVENTORY SERVICE - Productos
+================================================
+
+POST /api/inventory/products/
+{
+    "name": "Laptop",
+    "description": "Laptop gaming",
+    "price": 1500.00,
+    "stock": 20,
+    "min_stock": 5,
+    "category": 1
+}
+
+GET /api/inventory/products/
+
+GET /api/inventory/products/1/
+
+PUT /api/inventory/products/1/update/
+{
+    "name": "Laptop Pro",
+    "description": "Laptop gaming pro",
+    "price": 1800.00,
+    "stock": 20,
+    "min_stock": 5,
+    "category": 1
+}
+
+DELETE /api/inventory/products/1/delete/
+
+
+▸ INVENTORY SERVICE - Stock
+================================================
+
+PUT /api/inventory/products/1/stock/
+{
+    "quantity": 10,
+    "action": "restock"
+}
+
+PUT /api/inventory/products/1/stock/
+{
+    "quantity": 5,
+    "action": "discount"
+}
+
+
+▸ INVENTORY SERVICE - Movimientos de Producto
+================================================
+
+POST /api/inventory/products/movements/
+{
+    "product": 1,
+    "quantity": 10,
+    "type_of": "stock_in",
+    "description": "compra de mercancía"
+}
+
+GET /api/inventory/products/movements/
+
+PUT /api/inventory/products/movements/1/
+{
+    "product": 1,
+    "quantity": 8,
+    "type_of": "stock_in",
+    "description": "ajuste de compra"
+}
+
+DELETE /api/inventory/products/movements/1/
+
+
+▸ INVENTORY SERVICE - Categorías de Materias Primas
+================================================
+
+POST /api/inventory/raw-materials/categories/
+{
+    "name": "Metales",
+    "description": "Materiales metálicos"
+}
+
+GET /api/inventory/raw-materials/categories/
+
+PUT /api/inventory/raw-materials/categories/1/
+{
+    "name": "Metales Actualizado",
+    "description": "Descripción actualizada"
+}
+
+DELETE /api/inventory/raw-materials/categories/1/
+
+
+▸ INVENTORY SERVICE - Materias Primas
+================================================
+
+POST /api/inventory/raw-materials/
+{
+    "name": "Aluminio",
+    "description": "Lámina de aluminio",
+    "category": 1,
+    "quantity": 100,
+    "unit": "kg",
+    "price": 25.50
+}
+
+GET /api/inventory/raw-materials/
+
+GET /api/inventory/raw-materials/1/
+
+PUT /api/inventory/raw-materials/1/update/
+{
+    "name": "Aluminio Premium",
+    "description": "Lámina premium",
+    "category": 1,
+    "quantity": 100,
+    "unit": "kg",
+    "price": 30.00
+}
+
+DELETE /api/inventory/raw-materials/1/delete/
+
+
+▸ INVENTORY SERVICE - Movimientos de Materias Primas
+================================================
+
+POST /api/inventory/raw-materials/movements/
+{
+    "raw_material": 1,
+    "quantity": 50,
+    "type_of": "stock_in",
+    "description": "compra inicial"
+}
+
+GET /api/inventory/raw-materials/movements/
+
+PUT /api/inventory/raw-materials/movements/1/
+{
+    "raw_material": 1,
+    "quantity": 40,
+    "type_of": "stock_out",
+    "description": "uso en producción"
+}
+
+DELETE /api/inventory/raw-materials/movements/1/
+
+
+▸ SALES SERVICE - Ventas
+================================================
+
+POST /api/sales/sales/
+{
+    "product_id": 1,
+    "quantity": 2,
+    "description": "venta de prueba"
+}
+
+GET /api/sales/sales/
+
+GET /api/sales/sales/1/
+
+PUT /api/sales/sales/1/update/
+{
+    "quantity": 3,
+    "description": "venta actualizada"
+}
+
+DELETE /api/sales/sales/1/delete/
+
+
+▸ SALES SERVICE - Categorías de Gastos
+================================================
+
+POST /api/sales/categories/
+{
+    "name": "Servicios",
+    "description": "Gastos de servicios"
+}
+
+GET /api/sales/categories/
+
+GET /api/sales/categories/1/
+
+PUT /api/sales/categories/1/
+{
+    "name": "Servicios Básicos",
+    "description": "Agua, luz, internet"
+}
+
+DELETE /api/sales/categories/1/
+
+
+▸ SALES SERVICE - Gastos
+================================================
+
+POST /api/sales/expenses/
+{
+    "name": "Recibo de luz",
+    "description": "Pago mensual de luz",
+    "category_id": 1,
+    "quantity": 1,
+    "unit_price": 500.00
+}
+
+GET /api/sales/expenses/
+
+GET /api/sales/expenses/1/
+
+PUT /api/sales/expenses/1/update/
+{
+    "name": "Recibo de luz junio",
+    "description": "Pago junio",
+    "category_id": 1,
+    "quantity": 1,
+    "unit_price": 550.00
+}
+
+DELETE /api/sales/expenses/1/delete/
+
+
+================================================
+NOTAS:
+- Todos los endpoints (excepto register y login) requieren header:
+  Authorization: Bearer <access_token>
+- Los IDs (1, 2, etc.) son ejemplos, usar los IDs reales
+- type_of acepta: "stock_in" (entrada) o "stock_out" (salida)
+- action acepta: "restock" (sumar) o "discount" (restar)
+- El total de ventas se calcula automáticamente (price * quantity)
+- El total de gastos se calcula automáticamente (unit_price * quantity)
+================================================

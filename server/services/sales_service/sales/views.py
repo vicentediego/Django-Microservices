@@ -99,15 +99,16 @@ class SaleView(APIView):
                 status=400
             )
 
-        total = (
-            float(product["price"]) * quantity
-        )
+        unit_price = float(product["price"])
+        total = unit_price * quantity
 
         sale = Sale.objects.create(
             user_id=request.user["user_id"],
             product_id=product_id,
+            product_name=product["name"],
             quantity=quantity,
             description=description,
+            unit_price=unit_price,
             total=total
         )
 
@@ -190,9 +191,8 @@ class SaleUpdateView(APIView):
         sale.description = request.data.get(
             "description", sale.description
         )
-        sale.total = (
-            float(product["price"]) * new_quantity
-        )
+        sale.unit_price = float(product["price"])
+        sale.total = sale.unit_price * new_quantity
         sale.save()
 
         serializer = SaleSerializer(sale)

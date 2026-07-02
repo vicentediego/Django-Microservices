@@ -262,8 +262,64 @@ class ProductMovementView(APIView):
             status=status.HTTP_201_CREATED
         )
 
+    def put(self, request, pk):
+        try:
+            movement = ProductMovement.objects.get(pk=pk)
+        except ProductMovement.DoesNotExist:
+            return Response(
+                {"error": "Movimiento no encontrado"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        product = movement.product
+        old_type = movement.type_of
+        old_quantity = movement.quantity
+
+        serializer = ProductMovementSerializer(
+            movement,
+            data=request.data
+        )
+
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        with transaction.atomic():
+            if old_type == ProductMovement.Status.STOCK_IN:
+                product.stock -= old_quantity
+            else:
+                product.stock += old_quantity
+
+            updated = serializer.save()
+
+            if updated.type_of == ProductMovement.Status.STOCK_IN:
+                product.stock += updated.quantity
+            else:
+                if product.stock < updated.quantity:
+                    return Response(
+                        {
+                            "error":
+                            "Stock insuficiente"
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                product.stock -= updated.quantity
+
+            product.save()
+
+        return Response(serializer.data)
+
     def delete(self, request, pk):
-        movement = ProductMovement.objects.get(pk=pk)
+        try:
+            movement = ProductMovement.objects.get(pk=pk)
+        except ProductMovement.DoesNotExist:
+            return Response(
+                {"error": "Movimiento no encontrado"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
         product = movement.product
 
         with transaction.atomic():

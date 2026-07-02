@@ -20,7 +20,7 @@ class JWTServiceAuthentication(BaseAuthentication):
             token = auth_header.split(' ')[1]
             payload = jwt.decode(
                 token,
-                settings.SECRET_KEY,
+                settings.JWT_SIGNING_KEY,
                 algorithms=['HS256']
             )
 

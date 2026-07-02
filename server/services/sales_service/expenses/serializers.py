@@ -1,12 +1,19 @@
 from rest_framework import serializers
 from .models import Category, Expense
 
-class CategorySerializer(serializers.Serializer):
+class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = '__all__'
 
-class ExpenseSerializer(serializers.Serializer):
+class ExpenseSerializer(serializers.ModelSerializer):
+    category = CategorySerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        source='category',
+        write_only=True
+    )
+
     class Meta:
         model = Expense
         fields = '__all__'

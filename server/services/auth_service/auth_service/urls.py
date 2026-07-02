@@ -23,9 +23,10 @@ from drf_spectacular.views import (
 
 
 from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
     TokenRefreshView
 )
+
+from users.views import CustomTokenObtainPairView
 
 urlpatterns = [
 
@@ -33,7 +34,7 @@ urlpatterns = [
 
     path('api/', include('users.urls')),
 
-    path('api/login/', TokenObtainPairView.as_view()),
+    path('api/login/', CustomTokenObtainPairView.as_view()),
 
     path(
         'api/token/refresh/',
